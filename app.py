@@ -7,20 +7,41 @@ import time
 import threading
 import schedule
 
-# 페이지 설정: 반드시 모든 Streamlit 명령어보다 먼저 호출되어야 합니다.
+# 페이지 설정: 모든 Streamlit 명령어보다 먼저 호출되어야 합니다.
 st.set_page_config(
     page_title="달러 적립 시뮬레이터",
     page_icon="💰",
     layout="wide"
 )
 
-# --- 암호 입력 부분 ---
-# 지정된 암호를 설정합니다. (예: "secret123")
+# === 암호 보호 기능 (업데이트) ===
 PASSWORD = "secret123"
-user_password = st.text_input("페이지 접근을 위한 암호를 입력하세요", type="password")
-if user_password != PASSWORD:
-    st.error("암호가 틀렸습니다. 페이지에 접근할 수 없습니다.")
-    st.stop()
+
+# 세션 스테이트에 인증 여부를 저장합니다.
+if "authenticated" not in st.session_state:
+    st.session_state["authenticated"] = False
+
+if not st.session_state["authenticated"]:
+    # 중앙에 좁은 암호 입력 박스 배치 (좌우 여백 제공)
+    placeholder = st.empty()  # 암호 입력용 자리 표시자
+    with st.container():
+        col1, col2, col3 = st.columns([1, 2, 1])
+        with col2:
+            user_password = placeholder.text_input("페이지 접근을 위한 암호를 입력하세요", type="password")
+    # 암호 입력이 이루어진 경우 처리
+    if user_password:
+        if user_password != PASSWORD:
+            placeholder.error("암호가 틀렸습니다. 페이지에 접근할 수 없습니다.")
+            st.stop()
+        else:
+            st.session_state["authenticated"] = True
+            placeholder.empty()  # 인증 성공 시 입력창 제거
+            st.success("접속 성공!")
+    else:
+        st.info("암호를 입력하세요.")
+        st.stop()
+
+# === 이후부터 기존 코드 내용 ===
 
 # 스타일 적용
 st.markdown("""
@@ -130,6 +151,9 @@ with st.expander("💡 시뮬레이션 설명"):
     
     **데이터 제한:** Yahoo Finance에서 제공하는 USDKRW 환율 데이터(2003년 12월 이후)만 사용됩니다.
     """)
+
+# 이하 나머지 코드는 기존 내용대로 진행됩니다.
+
 
 # 사이드바 설정
 st.sidebar.markdown("<h3 style='text-align: center; color: #003b70;'>적립 설정</h3>", unsafe_allow_html=True)
